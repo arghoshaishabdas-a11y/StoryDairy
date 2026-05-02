@@ -8,6 +8,8 @@ export default function App() {
         alignItems: "center",
         fontSize: "28px",
         fontWeight: "bold",
+        background: "white",
+        color: "red"
       }}
     >
       StoryDiary চলছে ✅
