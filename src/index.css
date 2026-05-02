@@ -1,9 +1,36 @@
-body {
-  margin: 0;
-  background: white !important;
-  color: red !important;
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600&family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,700;1,9..144,400&family=JetBrains+Mono&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Outfit", ui-sans-serif, system-ui, sans-serif;
+  --font-serif: "Fraunces", ui-serif, Georgia, serif;
+  --font-mono: "JetBrains Mono", ui-monospace, monospace;
+
+  --color-night-950: #050a05;
+  --color-night-900: #0a140a;
+  --color-night-800: #122212;
+  --color-copper: #10b981;
+  --color-gold: #d4af37;
 }
 
-#root {
-  min-height: 100vh;
+@layer base {
+  body {
+    @apply bg-night-950 text-stone-300 font-sans antialiased;
+    background: radial-gradient(circle at 50% -20%, #1a2e1a 0%, transparent 70%),
+                linear-gradient(180deg, #050a05 0%, #030603 100%);
+    background-attachment: fixed;
+  }
+}
+
+.glass-card {
+  @apply bg-white/5 backdrop-blur-xl border border-white/10 rounded-3xl;
+}
+
+.premium-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(16, 185, 129, 0.3) transparent;
+}
+
+.fade-edges {
+  mask-image: linear-gradient(to bottom, transparent 0%, black 10%, black 90%, transparent 100%);
 }
