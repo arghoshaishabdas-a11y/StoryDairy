@@ -1,9 +1,6 @@
-import React, { useState, useEffect } from 'react';
-import { auth, db } from './lib/firebase';
-import { onAuthStateChanged, User, GoogleAuthProvider, signInWithPopup, signOut } from 'firebase/auth';
-import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
-import { AnimatePresence, motion } from 'motion/react';
-import { User as UserIcon, ShieldCheck, Lock, Book, PenLine, History, PieChart, LogOut, Sparkles } from 'lucide-react';
+import React, { useEffect, useState } from 'react';
+import { AnimatePresence } from 'motion/react';
+import { User as UserIcon, Lock, Book, PenLine, History, PieChart, ShieldCheck } from 'lucide-react';
 import { UserProfile } from './types';
 import Editor from './components/Editor';
 import Timeline from './components/Timeline';
@@ -13,6 +10,29 @@ import PinLock from './components/PinLock';
 import { PinLockProvider, usePinLock } from './components/PinLockProvider';
 import Settings from './components/Settings';
 import Home from './components/Home';
+
+// No login: the diary belongs to whoever uses this device, and the profile lives in localStorage.
+const PROFILE_KEY = 'storydiary:profile';
+const LOCAL_USER_ID = 'local';
+
+const defaultProfile = (): UserProfile => ({
+  userId: LOCAL_USER_ID,
+  email: '',
+  nickname: '',
+  photoURL: '',
+  streak: 0,
+  lastWroteAt: null,
+  settings: { notificationTime: '21:00', darkMode: true },
+  createdAt: new Date().toISOString(),
+});
+
+function loadProfile(): UserProfile {
+  try {
+    const raw = localStorage.getItem(PROFILE_KEY);
+    if (raw) return { ...defaultProfile(), ...JSON.parse(raw) };
+  } catch {}
+  return defaultProfile();
+}
 
 export default function App() {
   return (
@@ -25,53 +45,14 @@ export default function App() {
 }
 
 function AppContent() {
-  const [user, setUser] = useState<User | null>(null);
-  const [profile, setProfile] = useState<UserProfile | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [profile, setProfile] = useState<UserProfile>(loadProfile);
   const [activeTab, setActiveTab] = useState<'home' | 'write' | 'timeline' | 'stats' | 'settings'>('home');
 
   const { savedPin, setIsSettingPin, setIsLocked } = usePinLock();
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (user) => {
-      setUser(user);
-      if (user) {
-        const userDoc = await getDoc(doc(db, 'users', user.uid));
-        if (!userDoc.exists()) {
-          const newProfile = {
-            userId: user.uid,
-            email: user.email || '',
-            nickname: user.displayName || '',
-            photoURL: user.photoURL || '',
-            streak: 0,
-            lastWroteAt: null,
-            settings: { notificationTime: '21:00', darkMode: true },
-            createdAt: serverTimestamp(),
-          };
-          await setDoc(doc(db, 'users', user.uid), newProfile);
-          setProfile(newProfile as unknown as UserProfile);
-        } else {
-          setProfile(userDoc.data() as UserProfile);
-        }
-      }
-      setLoading(false);
-    });
-    return unsubscribe;
-  }, []);
-
-  if (loading) return <div className="h-screen w-full flex items-center justify-center bg-night-950"><Sparkles className="animate-spin text-copper w-12 h-12" /></div>;
-
-  if (!user) {
-    return (
-      <div className="h-screen w-full flex flex-col items-center justify-center p-6 text-center">
-        <Book className="w-20 h-20 text-copper mb-8" />
-        <h1 className="text-5xl font-serif font-bold mb-4 text-stone-100">StoryDiary</h1>
-        <button onClick={() => signInWithPopup(auth, new GoogleAuthProvider())} className="bg-stone-100 text-night-950 px-8 py-4 rounded-2xl font-bold flex items-center gap-3">
-          Continue with Google
-        </button>
-      </div>
-    );
-  }
+    try { localStorage.setItem(PROFILE_KEY, JSON.stringify(profile)); } catch {}
+  }, [profile]);
 
   return (
     <div className="min-h-screen md:pl-24">
@@ -94,9 +75,9 @@ function AppContent() {
 
       <main className="max-w-4xl mx-auto p-8">
         <AnimatePresence mode="wait">
-          {activeTab === 'home' && <Home userName={profile?.nickname || 'Writer'} onStart={() => setActiveTab('write')} onViewHistory={() => setActiveTab('timeline')} onViewStats={() => setActiveTab('stats')} />}
-          {activeTab === 'write' && <Editor userId={user.uid} profile={profile} />}
-          {activeTab === 'timeline' && <Timeline userId={user.uid} />}
+          {activeTab === 'home' && <Home userName={profile.nickname || 'Writer'} onStart={() => setActiveTab('write')} onViewHistory={() => setActiveTab('timeline')} onViewStats={() => setActiveTab('stats')} />}
+          {activeTab === 'write' && <Editor userId={LOCAL_USER_ID} profile={profile} />}
+          {activeTab === 'timeline' && <Timeline userId={LOCAL_USER_ID} />}
           {activeTab === 'stats' && <Stats profile={profile} />}
           {activeTab === 'settings' && <Settings profile={profile} onUpdate={setProfile} />}
         </AnimatePresence>
