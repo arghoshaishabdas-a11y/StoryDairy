@@ -8,3 +8,14 @@ export interface UserProfile {
   settings: { notificationTime: string; darkMode: boolean };
   createdAt: string;
 }
+
+export interface DiaryEntry {
+  id: string;
+  title: string;
+  content: string;
+  mood: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export type Tab = 'home' | 'write' | 'timeline' | 'stats' | 'settings';
